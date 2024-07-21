@@ -56,7 +56,6 @@ public class AppSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/articles").permitAll()
                         .anyRequest().authenticated());
         http.addFilterBefore(jwtAuthenticationFilter(), AnonymousAuthenticationFilter.class);
-
         return http.build();
     }
 

@@ -19,7 +19,6 @@ public class ArticlesController {
 
     @PostMapping("")
     String createArticle(@AuthenticationPrincipal UserEntity user) {
-        System.out.println("JERJJJJJJJJJJJJJJJJJJJJJJJJJJJ");
         return "Article Created by " + user.getUsername();
     }
 }

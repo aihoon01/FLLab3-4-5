@@ -14,7 +14,6 @@ public class JWTServiceTests {
     @Order(1)
     void canCreateJwtFromUserId() {
         var jwt = jwtService.createJwt(219L);
-
         assertNotNull(jwt);
     }
 }

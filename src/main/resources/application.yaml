@@ -8,3 +8,5 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create #in prod, use update, NOT create
+
+spring.profiles.active: dev

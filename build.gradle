@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.3.0'
 	id 'io.spring.dependency-management' version '1.1.5'
+	id 'war'
 }
 
 group = 'com.example'
@@ -29,6 +30,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'com.auth0:java-jwt:4.4.0'
+	providedRuntime('org.springframework.boot:spring-boot-starter-tomcat')
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.h2database:h2'
@@ -44,8 +46,107 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-jar {
-	manifest {
-		attributes('Main-Class': 'com.scaler.blogapp.BlogappSpringbootApplication')
+tasks.withType(org.gradle.jvm.tasks.Jar) {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.withType(War) {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.named('bootWar') {
+	enabled = true
+}
+
+tasks.named('war') {
+	enabled = false
+}
+
+springBoot {
+	mainClass = 'com.example.blogapp_springboot'
+}
+
+
+def projectDir = "C:/Users/StephenAihoon/Desktop/FLLabs/JavaUpskillLabs-lab-3-4-5/blogapp_springboot"
+def warFilename = "blogapp_springboot-0.0.1-SNAPSHOT.war"
+def warFilePath = "${projectDir}/build/libs/${warFilename}"
+
+def tomcatDir = "C:/Users/StephenAihoon/Downloads/apache-tomcat-10.1.26"
+def tomcatWebappsDir = "${tomcatDir}/webapps"
+def tomcatShutdownScript = "${tomcatDir}/bin/shutdown.bat"
+def tomcatStartupScript = "${tomcatDir}/bin/startup.bat"
+def unpackedDirPath = "${tomcatWebappsDir}/${warFilename.replace('.war', '')}"
+
+// Task to clean and build the project
+task buildProject {
+	group = 'build'
+	description = 'Builds the project and creates a WAR file.'
+
+	doLast {
+		println "Building the project..."
+		exec {
+			commandLine 'cmd', '/c', 'gradlew clean build'
+		}
 	}
+}
+
+// Task to stop Tomcat
+task stopTomcat {
+	group = 'deploy'
+	description = 'Stops the Tomcat server.'
+
+	doLast {
+		println "Stopping Tomcat..."
+		exec {
+			commandLine 'cmd', '/c', tomcatShutdownScript
+		}
+		sleep(10000) // Wait for Tomcat to stop
+		println "Tomcat Stopped..."
+	}
+}
+
+// Task to deploy the WAR file
+task deployWar {
+	group = 'deploy'
+	description = 'Deploys the new WAR file to Tomcat.'
+
+	doLast {
+		println "Deploying new WAR file..."
+		if (file(warFilePath).exists()) {
+			file("${tomcatWebappsDir}/${warFilename}").with {
+				delete()
+				copy {
+					from(warFilePath)
+					into(tomcatWebappsDir)
+				}
+			}
+			println "New WAR file Deployed"
+		} else {
+			throw new GradleException("WAR file not found: ${warFilePath}")
+		}
+	}
+}
+
+// Task to start Tomcat
+task startTomcat {
+	group = 'deploy'
+	description = 'Starts the Tomcat server.'
+
+	doLast {
+		println "Starting Tomcat..."
+		exec {
+			commandLine 'cmd', '/c', tomcatStartupScript
+		}
+		println "Tomcat Started..."
+	}
+}
+
+task buildAndDeploy {
+	group = 'deploy'
+	description = 'Builds and deploys the project to Tomcat.'
+
+	dependsOn buildProject
+	dependsOn stopTomcat
+	dependsOn deployWar
+	dependsOn startTomcat
 }
